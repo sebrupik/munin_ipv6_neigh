@@ -1,0 +1,100 @@
+#!/usr/bin/perl -w
+# -*- perl -*-
+
+=head1 NAME
+
+ip6_neighbors_addr_type_5_avg - Plugin to monitor IPv6 neighbor address type using a 5 minute average
+
+=head1 CONFIGURATION
+
+This plugin must run with root privileges
+
+=head1 CONFIGURATION EXAMPLE
+
+/etc/munin/plugin-conf.d/global or other file in that dir must contain:
+
+ [fw*]
+  user root
+
+=head1 AUTHOR
+
+Unknown snr1g11
+
+=head1 LICENSE
+
+GPLv2
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=cut
+
+if ( $ARGV[0] ) {
+
+    if ( $ARGV[0] eq 'autoconf' ) {
+	if ( -r '/proc/net/snmp') {
+	    print "yes\n";
+	    exit 0;
+	}
+	print "no\n";
+	exit 0;
+
+    } elsif ( $ARGV[0] eq 'config' ) {
+	print <<EOM;
+graph_title IPv6 neighbour address type 5 avg
+graph_args -l 0
+graph_vlabel number of hosts
+graph_category network
+graph_title IPv6 address type count count
+graph_args -l 0
+graph_vlabel number of hosts
+graph_category network
+ip6_neigh_private_ll_avg.label IPv6 privacy addresses - ll
+ip6_neigh_private_ll_avg.draw LINE1
+ip6_neigh_private_ll_avg.type GAUGE
+ip6_neigh_private_ll_avg.min 0
+ip6_neigh_private_global_avg.label IPv6 privacy addresses - global
+ip6_neigh_private_global_avg.draw LINE1
+ip6_neigh_private_global_avg.type GAUGE
+ip6_neigh_private_global_avg.min 0
+ip6_neigh_eui64_ll_avg.label IPv6 EUI-64 addresses -ll
+ip6_neigh_eui64_ll_avg.draw LINE1
+ip6_neigh_eui64_ll_avg.type GAUGE
+ip6_neigh_eui64_ll_avg.min 0
+ip6_neigh_eui64_global_avg.label IPv6 EUI-64 addresses - global
+ip6_neigh_eui64_global_avg.draw LINE1
+ip6_neigh_eui64_global_avg.type GAUGE
+ip6_neigh_eui64_global_avg.min 0
+EOM
+	exit 0;
+    }
+}
+
+@outputs = ("/tmp/ip6_neigh.index.1", "/tmp/ip6_neigh.index.2", "/tmp/ip6_neigh.index.3", "/tmp/ip6_neigh.index.4", "/tmp/
+ip6_neigh.index.5");
+
+$ip6_neigh_private_ll = 0;
+$ip6_neigh_private_global = 0;
+$ip6_neigh_eui64_ll = 0;
+$ip6_neigh_eui64_global = 0;
+
+foreach(@outputs) {    
+    $ip6_neigh_private_ll += int(`cat $_ | grep fe80 | grep -v ff:fe | wc -l`);
+    $ip6_neigh_private_global += int(`cat $_ | grep 2001 | grep -v ff:fe | wc -l`);
+    $ip6_neigh_eui64_ll += int(`cat $_ | grep fe80 | grep ff:fe | wc -l`);
+    $ip6_neigh_eui64_global += int(`cat $_ | grep 2001 | grep ff:fe | wc -l`);
+}
+
+$ip6_neigh_private_ll_avg = ($ip6_neigh_private_ll / 5);
+$ip6_neigh_private_global_avg = ($ip6_neigh_private_global / 5);
+$ip6_neigh_eui64_ll_avg = ($ip6_neigh_eui64_ll / 5);
+$ip6_neigh_eui64_global_avg = ($ip6_neigh_eui64_global / 5);
+
+print "ip6_neigh_private_ll_avg.value $ip6_neigh_private_ll_avg\n";
+print "ip6_neigh_private_global_avg.value $ip6_neigh_private_global_avg\n";
+print "ip6_neigh_eui64_ll_avg.value $ip6_neigh_eui64_ll_avg\n";
+print "ip6_neigh_eui64_global_avg.value $ip6_neigh_eui64_global_avg\n";
+
+# vim:syntax=perl
