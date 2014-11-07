@@ -1,0 +1,25 @@
+#!/usr/bin/perl -w
+# -*- perl -*-
+
+$file_index = '/tmp/ip6_neigh.index';
+
+unless (-e $file_index) {
+  open(INDEX, ">",  $file_index);
+  print INDEX "1";
+}
+close(INDEX);
+
+open(INDEX, "+<", $file_index);
+$index = <INDEX>;
+$index = int($index);
+
+`ip -6 neigh > $file_index"."$index`;
+
+seek(INDEX, 0, 0);
+if($index >= 5) {
+  $new_index=1;
+} else {
+  $new_index = $index+1;
+}
+print INDEX $new_index;
+close(INDEX);
